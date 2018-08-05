@@ -4,9 +4,12 @@ import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.event.EventHandler;
 import javafx.scene.Group;
+import javafx.scene.control.Label;
+import javafx.scene.input.DragEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
+import javafx.scene.shape.Rectangle;
 
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
@@ -18,21 +21,44 @@ public class WayPoint implements Serializable{
     private double theta;
     private boolean selected;
     private int id;
+    private final int wpRadius = 8;
 
 
     public Group wPInstance;
+    private Rectangle pointer;
     private Circle selectCircle;
+    private Label labelID;
 
     public WayPoint(double x, double y, double theta) {
         this.x = x;
         this.y = y;
-        this.theta = theta;
+        this.theta = 0;
+
 
         wPInstance = new Group();
-        wPInstance.getChildren().add(new Circle(0,0,6));
+        Circle base = new Circle(0,0,wpRadius);
+        base.setStroke(Color.BLACK);
+        base.setFill(null);
 
-        selectCircle = new Circle(0,0,8);
-        selectCircle.setFill(Color.RED);
+        Circle touch = new Circle(0,0,wpRadius);
+        touch.setFill(Color.TRANSPARENT);
+
+        wPInstance.getChildren().addAll(base,touch);
+
+        pointer = new Rectangle(8, 2);
+        wPInstance.getChildren().add(pointer);
+
+        pointer.setX(wpRadius/2);
+        pointer.setY(-1);
+
+        labelID = new Label();
+        wPInstance.getChildren().add(labelID);
+        labelID.setTranslateY(wpRadius);
+        labelID.setTranslateX(-3);
+
+        selectCircle = new Circle(0,0,10);
+        selectCircle.setFill(Color.CORAL);
+        selectCircle.setOpacity(0.80);
 
         setSelected(true);
     }
@@ -48,6 +74,16 @@ public class WayPoint implements Serializable{
     public void setPosition(double x, double y){
         setX(x);
         setY(y);
+    }
+
+    public void rotate(double theta){
+        while(theta<-180)
+            theta += 360;
+        while(theta>180)
+            theta -= 360;
+
+        this.theta = theta;
+        wPInstance.setRotate(-theta);
     }
 
     @Override
@@ -84,6 +120,7 @@ public class WayPoint implements Serializable{
     }
 
     public void setId(int id) {
+        labelID.setText(Integer.toString(id));
         this.id = id;
     }
 

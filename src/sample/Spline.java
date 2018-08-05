@@ -23,8 +23,10 @@ public class Spline {
     
     private final double width = 0.1;
 
-    public Spline(double x0, double y0, double theta0, double x1, double y1, double theta1){
-        System.out.println("Reticulating splines...");
+    public Spline(WayPoint wp0, WayPoint wp1){
+        //System.out.println("Reticulating splines...");
+        double x0 = wp0.getX(), y0 = wp0.getY(), theta0 = Math.toRadians(wp0.getTheta());
+        double x1 = wp1.getX(), y1 = wp1.getY(), theta1 = Math.toRadians(wp1.getTheta());
 
         xOffset = x0;
         yOffset = y0;
