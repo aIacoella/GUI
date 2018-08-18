@@ -1,8 +1,6 @@
-package sample;
+package MainPack;
 
 public class Spline {
-    //ax^5 bx^4 cx^3 dx^2 ex
-
     private double a = -1;
     private double b = 2.7;
     private double c = -0.06;
@@ -233,5 +231,6 @@ public class Spline {
     	return theta;
     	
     }
-    
+
+
 }

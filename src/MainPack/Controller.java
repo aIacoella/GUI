@@ -1,9 +1,12 @@
-package sample;
+package MainPack;
 
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Group;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
@@ -11,6 +14,8 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 
 import java.net.URL;
 import java.util.ArrayList;
@@ -30,6 +35,9 @@ public class Controller implements Initializable{
 
     @FXML
     public VBox WPList = new VBox();
+
+    @FXML
+    public AnchorPane wayPointUI = new AnchorPane();
 
     @FXML
     public Label wpTitle = new Label();
@@ -57,41 +65,45 @@ public class Controller implements Initializable{
     private double fieldWidth = 10;
     private double fieldHeight = 8;
 
-    private double robotWidth = 1.5;
-    private double robotLength = 1;
+    private final double fieldMultiplicator = 50;
+
+    private double robotWidth;
+    private double robotHeight;
 
     private Group robot;
+
+    Rectangle robotSprite;
 
     private ArrayList<Button> wPButtons;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+        //Database first
+        Database.load();
+        updateDBValues();
+        //END OF DATABASE
+
+        field.setPrefSize(fieldWidth * fieldMultiplicator, fieldHeight * fieldMultiplicator);
+
         wayPoints = new ArrayList<>();
         trajectory = new Group();
         wPButtons = new ArrayList<>();
 
         robot = new Group();
-        Rectangle robotSprite = new Rectangle(sizeScaledUPX(robotWidth), sizeScaledUPY(robotLength));
+        robotSprite = new Rectangle(sizeScaledUPX(robotWidth), sizeScaledUPY(robotHeight));
         robotSprite.setFill(Color.TRANSPARENT);
         robotSprite.setStroke(Color.BLACK);
         robotSprite.setX(sizeScaledUPX(-robotWidth)/2);
-        robotSprite.setY(sizeScaledUPY(-robotLength)/2);
+        robotSprite.setY(sizeScaledUPY(-robotHeight)/2);
         robot.getChildren().add(robotSprite);
 
-
-        //Circle spacer = new Circle(0,0,2);
-        //spacer.setVisible(false);
-        //trajectory.getChildren().add(spacer);
-
         field.getChildren().add(trajectory);
-        //field.getChildren().add(newWayPoint(2.0,2.0,0));
-        //field.getChildren().add(newWayPoint(6,6.0,0));
 
-        //Spline s = new Spline(2,2,0,6,6,0);
+        wayPointUI.setVisible(false);
 
-        //field.getChildren().add(drawSpline(s,0.01));
 
-        //System.out.println(s);
+
+        //  EVENT HANDLERS
 
         field.setOnMouseMoved(new EventHandler<MouseEvent>() {
             @Override
@@ -103,7 +115,7 @@ public class Controller implements Initializable{
         field.setOnMouseReleased(new EventHandler<MouseEvent>() {
             @Override
             public void handle(MouseEvent event) {
-                clickMouse(event.getX(), event.getY());
+                releaseMouse(event.getX(), event.getY());
             }
         });
 
@@ -113,7 +125,6 @@ public class Controller implements Initializable{
                 moveMouse(event.getX(), event.getY());
             }
         });
-
 
     }
 
@@ -131,14 +142,11 @@ public class Controller implements Initializable{
             moveWP(scaledDOWNX(x), scaledDOWNY(y), wayPoints.get(selectIndex).getTheta());
         }
     }
-
-    private void clickMouse(double x,double y){
-        //System.out.println("CLICKING");
+    private void releaseMouse(double x,double y){
         if (selected == selection.MOVING || selected==selection.POSITIONING){
             selected = selection.SELECTED;
             updateTrajectory();
         }
-
 
     }
 
@@ -151,7 +159,6 @@ public class Controller implements Initializable{
 
         wayPoints.get(selectIndex).wPInstance.setOnMousePressed(event -> {
             if(selected!=selection.POSITIONING){
-                //System.out.println("Clicked");
                 for(int i=0;i<wayPoints.size();i++) {
                     if (event.getSource().equals(wayPoints.get(i).wPInstance)) {
                         if (i != selectIndex) {
@@ -165,7 +172,6 @@ public class Controller implements Initializable{
         });
 
         //selected = selection.POSITIONING;
-        //System.out.println(selectIndex);
 
         field.getChildren().add(wayPoints.get(selectIndex).wPInstance);
         updateWPList();
@@ -181,7 +187,6 @@ public class Controller implements Initializable{
         Group function = new Group();
 
         for (double dx = 0; dx<s.getDistance(); dx += precision){
-            System.out.println(dx);
             double x = scaledUPX(s.getxOffset() + dx * Math.cos(s.getThetaOffset()));
             double y = scaledUPY(s.getyOffset() + s.eval(dx) + dx * Math.sin(s.getThetaOffset()));
             Circle point = new Circle(x,y,1);
@@ -229,6 +234,13 @@ public class Controller implements Initializable{
         y = y/field.getPrefHeight() * fieldHeight;
         return fieldHeight-y;
     }
+    private void setUnselected(){
+        Unselect();
+        selected = selection.UNSELECTED;
+        selectIndex = -1;
+        wayPointUI.setVisible(false);
+
+    }
 
     private void setSelection(int i){
         selectIndex = i;
@@ -270,35 +282,6 @@ public class Controller implements Initializable{
     }
 
     private void updateTrajectory(){
-        /*
-        if(wayPoints.size()<=1){
-            trajectory.getChildren().remove(1,trajectory.getChildren().size());
-        } else {
-            if(selectIndex==wayPoints.size()-1){
-                //Last one
-                if(trajectory.getChildren().size()==wayPoints.size()-1) {
-                    Spline s1 = new Spline(wayPoints.get(selectIndex - 1), wayPoints.get(selectIndex));
-                    trajectory.getChildren().add(drawSpline(s1));
-                } else
-                {
-                    Spline s1 = new Spline(wayPoints.get(selectIndex - 1), wayPoints.get(selectIndex));
-                    trajectory.getChildren().set(selectIndex, drawSpline(s1));
-                }
-
-            } else if(selectIndex==0){
-                //First one
-                Spline s0 = new Spline(wayPoints.get(selectIndex), wayPoints.get(selectIndex + 1));
-                trajectory.getChildren().set(selectIndex+1, drawSpline(s0));
-
-            } else{
-                //Middle One
-                Spline s0 = new Spline(wayPoints.get(selectIndex), wayPoints.get(selectIndex+1));
-                trajectory.getChildren().set(selectIndex, drawSpline(s0));
-                Spline s1 = new Spline(wayPoints.get(selectIndex-1), wayPoints.get(selectIndex));
-                trajectory.getChildren().set(selectIndex+1, drawSpline(s1));
-            }
-        }
-        */
         trajectory.getChildren().clear();
         for(int i=1; i<wayPoints.size(); i++){
             Spline s = new Spline(wayPoints.get(i-1), wayPoints.get(i));
@@ -308,7 +291,6 @@ public class Controller implements Initializable{
     }
 
     public void Select(int i){
-        //System.out.println(i);
         Unselect();
         Select(wayPoints.get(i));
     }
@@ -331,6 +313,8 @@ public class Controller implements Initializable{
     }
 
     private void updateData(){
+        wayPointUI.setVisible(true);
+
         String xString = Double.toString(wayPoints.get(selectIndex).getX());
         xLabel.setText(xString.substring(0,Math.min(xString.length(), 4)));
 
@@ -348,12 +332,70 @@ public class Controller implements Initializable{
         Double y = yLabel.getText().length() >= 1 ? Double.parseDouble(yLabel.getText()) : 0.0;
         Double theta = thetaLabel.getText().length() >= 1 ? Double.parseDouble(thetaLabel.getText()) : 0.0;
 
-        System.out.println(theta);
         moveWP(x, y, theta);
 
         updateTrajectory();
     }
 
+    public void deleteWP(){
 
+        field.getChildren().remove(wayPoints.get(selectIndex).wPInstance);
+        wayPoints.remove(selectIndex);
+        updateWPList();
+        setUnselected();
+        updateTrajectory();
+
+    }
+
+    public void openRobotSettings() throws Exception{
+        Parent root = FXMLLoader.load(getClass().getResource("RobotSettings.fxml"));
+        final Stage robotSettings = new Stage();
+        robotSettings.setTitle("Robot Settings");
+        robotSettings.initModality(Modality.APPLICATION_MODAL);
+        Scene dialogScene = new Scene(root, 400, 300);
+        robotSettings.setScene(dialogScene);
+        robotSettings.show();
+        robotSettings.setOnCloseRequest(event -> {
+            updateDBObjects();
+        });
+    }
+
+    public void openFieldSettings() throws Exception{
+        Parent root = FXMLLoader.load(getClass().getResource("FieldSettings.fxml"));
+        final Stage robotSettings = new Stage();
+        robotSettings.setTitle("Field Settings");
+        robotSettings.initModality(Modality.APPLICATION_MODAL);
+        Scene dialogScene = new Scene(root, 400, 300);
+        robotSettings.setScene(dialogScene);
+        robotSettings.show();
+        robotSettings.setOnCloseRequest(event -> {
+            updateDBObjects();
+        });
+    }
+
+
+    public void updateDBObjects(){
+        //Robot Settings
+        robotWidth = Database.getData(Database.ROBOTWIDTH);
+        robotHeight = Database.getData(Database.ROBOTHEIGHT);
+
+        robotSprite.setWidth(sizeScaledUPX(robotWidth));
+        robotSprite.setHeight(sizeScaledUPY(robotHeight));
+        robotSprite.setX(sizeScaledUPX(-robotWidth)/2);
+        robotSprite.setY(sizeScaledUPY(-robotHeight)/2);
+
+        fieldWidth = Database.getData(Database.FIELDWIDTH);
+        fieldHeight = Database.getData(Database.FIELDHEIGHT);
+
+        field.setPrefSize(fieldWidth * fieldMultiplicator, fieldHeight * fieldMultiplicator);
+    }
+
+    public void updateDBValues(){
+        robotWidth = Database.getData(Database.ROBOTWIDTH);
+        robotHeight = Database.getData(Database.ROBOTHEIGHT);
+
+        fieldWidth = Database.getData(Database.FIELDWIDTH);
+        fieldHeight = Database.getData(Database.FIELDHEIGHT);
+    }
 
 }
