@@ -12,6 +12,7 @@ public class WayPoint implements Serializable{
     private double x;
     private double y;
     private double theta;
+    private double velocity;
     private boolean selected;
     private int id;
     private final int wpRadius = 8;
@@ -26,6 +27,7 @@ public class WayPoint implements Serializable{
         this.x = x;
         this.y = y;
         this.theta = 0;
+        this.velocity = 0;
 
 
         wPInstance = new Group();
@@ -129,5 +131,13 @@ public class WayPoint implements Serializable{
 
     public void setTheta(double theta) {
         this.theta = theta;
+    }
+
+    public double getVelocity() {
+        return velocity;
+    }
+
+    public void setVelocity(double velocity) {
+        this.velocity = velocity;
     }
 }

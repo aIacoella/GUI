@@ -17,7 +17,16 @@ public class Database {
     public final static int FIELDWIDTH = 2;
     public final static int FIELDHEIGHT = 3;
 
-    private static double[] data = new double[4];
+    public final static int SPEED = 4;
+    public final static int ACCELERATION = 5;
+    public final static int DECELERATION = 6;
+
+    public final static int DT=7;
+    public final static int CALCULUSDT=8;
+
+    public final static int DATASIZE = 9;
+
+    private static double[] data = new double[DATASIZE];
 
     public static void load(){
 
@@ -64,5 +73,19 @@ public class Database {
 
     public static void setData(int index, double value){
         data[index] = value;
+    }
+
+    public static double boolToDouble(boolean b){
+        if(b)
+            return 1.0;
+        else
+            return -1.0;
+
+    }
+
+    public static boolean doubleToBool(double d){
+        if(d==1.0)
+            return true;
+        return false;
     }
 }

@@ -1,6 +1,8 @@
-package MainPack;
+package TrajectoryGenerator;
 
 public class Spline {
+    //ax^5 bx^4 cx^3 dx^2 ex
+
     private double a = -1;
     private double b = 2.7;
     private double c = -0.06;
@@ -11,7 +13,6 @@ public class Spline {
     private double xOffset;
     private double yOffset;
     private double thetaOffset;
-    private double xDistance;
 
     private final double dx = 0.00001;
     private double arcLength;
@@ -19,17 +20,13 @@ public class Spline {
     private double upperArcLength;
     private double lowerArcLength;
     
-    private final double width = 0.1;
+    private final double width = 0.73;
 
-    public Spline(WayPoint wp0, WayPoint wp1){
+    public Spline(double x0, double y0, double theta0, double x1, double y1, double theta1){
         //System.out.println("Reticulating splines...");
-        double x0 = wp0.getX(), y0 = wp0.getY(), theta0 = Math.toRadians(wp0.getTheta());
-        double x1 = wp1.getX(), y1 = wp1.getY(), theta1 = Math.toRadians(wp1.getTheta());
-
         xOffset = x0;
         yOffset = y0;
-        xDistance = Math.abs(x1-x0);
-
+        
         thetaOffset = Math.atan2(y1-y0, x1-x0);
         
         distance = Math.sqrt((x1-x0) * (x1-x0) + (y1-y0) * (y1-y0));
@@ -40,7 +37,9 @@ public class Spline {
 
         double yp0_hat = Math.tan(twoAngleDifference(theta0, thetaOffset));
         double yp1_hat = Math.tan(twoAngleDifference(theta1, thetaOffset));
-
+        
+        //System.out.println(Math.toDegrees(theta0 - thetaOffset));
+        //System.out.println(Math.toDegrees(theta1 - thetaOffset));
         
         //Here I go straight for the Quintic
         a = -(3 * (yp0_hat + yp1_hat)) / (distance * distance * distance * distance);
@@ -50,10 +49,43 @@ public class Spline {
         e = yp0_hat;
         
         arcLength = evaluateArcLength();
-        
-
     }
 
+    public Spline(WaypointTG waypoint0, WaypointTG waypoint1){
+    	double x0 = waypoint0.getX();
+    	double y0 = waypoint0.getY();
+    	double theta0 = waypoint0.getAngle();
+    	double x1 = waypoint1.getX();
+    	double y1 = waypoint1.getY(); 
+    	double theta1 = waypoint1.getAngle();
+        //System.out.println("Reticulating splines...");
+        xOffset = x0;
+        yOffset = y0;
+        
+        thetaOffset = Math.atan2(y1-y0, x1-x0);
+        
+        distance = Math.sqrt((x1-x0) * (x1-x0) + (y1-y0) * (y1-y0));
+        
+        if (distance==0){
+            return;
+        }
+
+        double yp0_hat = Math.tan(twoAngleDifference(theta0, thetaOffset));
+        double yp1_hat = Math.tan(twoAngleDifference(theta1, thetaOffset));
+        
+        //System.out.println(Math.toDegrees(theta0 - thetaOffset));
+        //System.out.println(Math.toDegrees(theta1 - thetaOffset));
+        
+        //Here I go straight for the Quintic
+        a = -(3 * (yp0_hat + yp1_hat)) / (distance * distance * distance * distance);
+        b = (8 * yp0_hat + 7 * yp1_hat) / (distance * distance * distance);
+        c = -(6 * yp0_hat + 4 * yp1_hat) / (distance * distance);
+        d = 0;
+        e = yp0_hat;
+        
+        arcLength = evaluateArcLength();
+    }
+    
     @Override
     public String toString() {
         String s = "A -> " + a + "\n" +
@@ -61,7 +93,6 @@ public class Spline {
                 "C -> " + c + "\n" +
                 "D -> " + d + "\n" +
                 "E -> " + e + "\n" +
-                "Distance -> " + distance + "\n" +
                 "Upper Arc Length -> " + upperArcLength + "\n" +
                 "Lower Arc Length -> " + lowerArcLength + "\n";
         return s;
@@ -76,7 +107,7 @@ public class Spline {
 
 
     /**
-     *  eval(x,nDerivative): Returns the nDerivative of the function evaluated at x
+     *  firstDerivative(x): Returns the first derivative of the function evaluated at x
      */
     public double firstDerivative(double x){
     	return 5*a*Math.pow(x,4) + 4*b*Math.pow(x,3) + 3*c*Math.pow(x,2) + 2*d*x + e;
@@ -129,8 +160,6 @@ public class Spline {
     	return getVel(x, isUp) / getInnVel(x);
     }
     
-    
-    
     public double evaluateArcLength(){
         double a = 0;
         double integral = 0;
@@ -167,10 +196,6 @@ public class Spline {
         return d;
     }
 
-    public double getThetaOffset() {
-        return thetaOffset;
-    }
-
     public double getE() {
         return e;
     }
@@ -189,10 +214,6 @@ public class Spline {
     
 	public double getDistance() {
         return distance;
-    }
-
-    public double getxDistance() {
-        return xDistance;
     }
 
     public double getxOffset() {
@@ -229,6 +250,5 @@ public class Spline {
     	return theta;
     	
     }
-
-
+    
 }
